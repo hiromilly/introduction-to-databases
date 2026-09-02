@@ -1,9 +1,9 @@
 # SPRINT 1/5 — Planejamento Inicial do Módulo
 
 **Disciplina:** Laboratório de Banco de Dados  
-**Data:** 31/08/2026  
-**Equipe:** Team 01  
-**Módulo:** Alunos  
+**Data:** 01/09/2026  
+**Equipe:** Team 03  
+**Módulo:** Autenticação e Gestão de Clientes (Salão de Beleza Bridge of Beauty)  
 
 ---
 
@@ -29,61 +29,57 @@ O objetivo de hoje é definir claramente:
 
 Preencha com os integrantes da equipe.
 
-- Nome completo:
-- Nome completo:
-- Nome completo:
-- Nome completo:
+- Nome completo: Célia Hiromi Watanabe
 
 ---
 
 ## 2. Descrição do módulo
 
-Escreva uma breve descrição explicando o papel do **Módulo de Alunos** dentro do sistema.
+Esse módulo será responsável pelo cadastro e acesso dos clientes ao sistema do Salão de Beleza. Dentro dele terão informações como: nome, telefone, e-mail, login e senha de cada cliente.
 
-A descrição deve responder:
-
-1. O que este módulo representa?
-2. Quais informações principais serão armazenadas?
-3. Para que essas informações serão utilizadas?
-4. Com quais outros módulos ele poderá se relacionar?
-
+Com essas informações serão utilizadas para identificar o cliente e permitir que ele entre no sistema com seu login e a senha.  Após feito isso ele poderá ter acesso para consultar os serviços oferecidos pelo salão, verificar os preços e promoções, visualizar os dias e horários disponíveis e realizar seus agendamentos. Também poderá relacionar com o módulo de serviços, para visualizar os preços dos serviços e com o módulo de agendamento, para que assim o cliente possa escolher um serviço, selecionar data e horário disponível para marcar seu atendimento, deixando de maneira mais organizado facilitando o processo dos serviços oferecidos pelo Salão de Beleza.
 ### Exemplo de nível esperado
 
-> O Módulo de Alunos será responsável por armazenar e organizar os dados acadêmicos básicos dos estudantes cadastrados no sistema. Esses dados poderão posteriormente ser utilizados por outros módulos, como matrículas, notas, frequência e biblioteca.
+> O Módulo de Autenticação e Clientes será responsável por armazenar os dados cadastrais (login e senha) de cada cliente do salão de beleza. Esses dados serão utilizados para autenticar o cliente na plataforma e permitir o agendamento de serviços na agenda de horários (como cortes de cabelo, escovas, limpeza de pele, unhas, depilação e procedimentos químicos).
 
-**Não copie o exemplo literalmente. Produza a descrição da própria equipe.**
 
 ### Descrição da equipe
 
-> Escreva aqui.
+> Os  usuários e clientes cadastrados terão acesso ao serviço do salão de beleza, permitindo o entrar ao sistema podendo utilizar seu login e senha cadastrado, para visualizar e marcar horários com agendamentos dos serviços oferecidos, podendo ver preços e dias disponíveis para cada serviço
 
 ---
 
 ## 3. Planejamento da tabela principal
 
-A equipe deverá definir os atributos iniciais da tabela responsável por representar os alunos.
+A equipe deverá definir os atributos iniciais da tabela responsável por representar os usuários e clientes do salão.
 
 Preencha a tabela abaixo.
 
-| Atributo | Tipo de dado previsto | Obrigatório? | Restrição prevista | Justificativa |
-|---|---|---|---|---|
-| `id_aluno` | `INT` | Sim | `PRIMARY KEY` | Identificador único do aluno |
-|  |  |  |  |  |
-|  |  |  |  |  |
-|  |  |  |  |  |
-|  |  |  |  |  |
-|  |  |  |  |  |
+| Atributo        | Tipo de dado previsto | Obrigatório? | Restrição prevista                      | Justificativa                                            |
+| :-------------- | :-------------------- | :----------- | :-------------------------------------- | :------------------------------------------------------- |
+| `id_usuario`    | `INT`                 | Sim          | `PRIMARY KEY`, `AUTO_INCREMENT`         | Identificador único de cada cliente/usuário no sistema   |
+| `nome_completo` | `VARCHAR(100)`        | Sim          | `NOT NULL`                              | Nome completo do cliente para exibição e agendamentos    |
+| `cpf`           | `VARCHAR(14)`         | Sim          | `NOT NULL`, `UNIQUE`                    | Documento único nacional que evita cadastros duplicados  |
+| `telefone`      | `VARCHAR(20)`         | Sim          | `NOT NULL`                              | Contato telefônico para confirmação de agendamentos      |
+| `email`         | `VARCHAR(100)`        | Sim          | `NOT NULL`, `UNIQUE`                    | E-mail para contato e recuperação de senha               |
+| `login`         | `VARCHAR(50)`         | Sim          | `NOT NULL`, `UNIQUE`                    | Nome de usuário único para autenticação/login no sistema |
+| `senha_hash`    | `VARCHAR(255)`        | Sim          | `NOT NULL`                              | Senha de acesso armazenada em formato hash seguro        |
+| `tipo_usuario`  | `VARCHAR(20)`         | Sim          | `NOT NULL`, `DEFAULT 'Cliente'`         | Nível de acesso (Cliente, Profissional, Administrador)   |
+| `status_conta`  | `VARCHAR(20)`         | Sim          | `NOT NULL`, `DEFAULT 'Ativo'`           | Estado do cadastro (Ativo, Inativo, Bloqueado)           |
+| `data_cadastro` | `DATETIME`            | Sim          | `NOT NULL`, `DEFAULT CURRENT_TIMESTAMP` | Data e hora em que o cadastro foi realizado              |
 
 A equipe deverá propor **pelo menos 5 atributos além do identificador principal**.
 
 Alguns exemplos de atributos que podem ser considerados:
 
 - nome;
-- matrícula;
+- CPF;
+- login;
+- senha;
 - e-mail;
-- data de nascimento;
-- data de ingresso;
-- situação acadêmica.
+- telefone;
+- data de cadastro;
+- status da conta.
 
 A equipe não é obrigada a utilizar exatamente esses atributos.
 
@@ -95,13 +91,13 @@ Informe qual atributo será utilizado como chave primária da tabela.
 
 **Atributo escolhido:**
 
-`________________________________________`
+`id_usuario`
 
 ### Justificativa
 
 Explique por que esse atributo é adequado para identificar cada registro de forma única.
 
-> Escreva aqui.
+> Será utilizado um id_usuário como chave primária porque cada cliente cadastrado terá um número de identificação único dentro do sistema. Mesmo que o cliente altere alguma informação do seu cadastro, seu identificador continuará sendo o mesmo, já o CPF será cadastrado como uma informação única de cada cliente e será utilizado para realizar o login no sistema junto com a senha criada, assim  permitindo que ele acesse sua conta para consultar os serviços, preços, horários disponíveis e realizar seus agendamentos.
 
 ---
 
@@ -110,17 +106,20 @@ Explique por que esse atributo é adequado para identificar cada registro de for
 Identifique quais restrições poderão ser necessárias.
 
 | Atributo | Restrição prevista | Justificativa |
-|---|---|---|
-|  | `NOT NULL`, `UNIQUE`, etc. |  |
-|  |  |  |
-|  |  |  |
-|  |  |  |
+| :--- | :--- | :--- |
+| `id_usuario` | `PRIMARY KEY`, `AUTO_INCREMENT` | Garante a identificação única e automática de cada usuário. |
+| `login` | `NOT NULL`, `UNIQUE` | Garante que cada cliente tenha um login exclusivo e que nunca fique em branco. |
+| `email` | `NOT NULL`, `UNIQUE` | Impede e-mails duplicados e assegura um canal único para recuperação de conta. |
+| `cpf` | `NOT NULL`, `UNIQUE` | Garante que um mesmo cliente não seja cadastrado mais de uma vez. |
+| `senha_hash` | `NOT NULL` | Torna obrigatório que todo usuário possua uma senha de acesso. |
+| `telefone` | `NOT NULL` | Obrigatório para contato do salão para confirmação de horários. |
+| `status_conta` | `NOT NULL`, `DEFAULT 'Ativo'` | Define que todo novo usuário inicia com acesso liberado. |
 
 Durante a discussão, considere perguntas como:
 
-- dois alunos podem possuir a mesma matrícula?
-- dois alunos podem possuir o mesmo e-mail?
-- o nome de um aluno pode ficar vazio?
+- dois clientes podem possuir o mesmo login?
+- dois clientes podem possuir o mesmo e-mail ou CPF?
+- a senha de um usuário pode ficar vazia?
 - quais informações devem ser obrigatórias?
 - quais dados precisam ser únicos?
 
@@ -128,15 +127,14 @@ Durante a discussão, considere perguntas como:
 
 ## 6. Relacionamentos com outros módulos
 
-Liste os módulos que poderão utilizar ou se relacionar com os dados de alunos.
+Liste os módulos que poderão utilizar ou se relacionar com os dados de clientes/usuários.
 
-| Módulo relacionado | Como poderá se relacionar com Alunos? |
-|---|---|
-| Matrículas | |
-| Notas | |
-| Frequência | |
-| Biblioteca | |
-| Outro, se necessário | |
+| Módulo relacionado | Como poderá se relacionar com Usuários/Clientes? |
+| :--- | :--- |
+| Agenda de Horários / Agendamentos | O cliente autenticado (`id_usuario`) realiza agendamentos escolhendo datas e horários disponíveis. |
+| Serviços do Salão | O agendamento associa o cliente aos serviços selecionados (Corte 1h, Limpeza de pele 2h, Escova 1h, Pintura/Química 3h, Unha 1h, Depilação 2h). |
+| Profissionais / Atendentes | Vincula o atendimento do cliente ao profissional responsável pela execução do serviço. |
+| Financeiro / Pagamentos | Registra os pagamentos e valores correspondentes aos serviços agendados pelo cliente. |
 
 > Nesta Sprint, não é necessário implementar `FOREIGN KEY`. O objetivo é apenas identificar possíveis relacionamentos.
 
@@ -148,28 +146,24 @@ Registre pelo menos **3 regras de negócio** que a equipe considera importantes 
 
 Exemplos de perguntas que podem ajudar:
 
-- todo aluno deve possuir matrícula?
-- uma matrícula pode se repetir?
-- um aluno pode existir sem e-mail?
-- o sistema deverá registrar a situação acadêmica do aluno?
+- todo cliente deve possuir login e senha?
+- a senha pode ser armazenada em texto puro?
+- um cliente pode existir sem telefone ou e-mail?
+- como a duração dos serviços (1h, 2h, 3h) impacta a reserva na agenda?
 
 ### Regras da equipe
 
-1. 
-2. 
-3. 
+1. **Autenticação Obrigatória:** O cliente só pode acessar a agenda e realizar agendamentos após autenticar-se com login e senha válidos.
+2. **Segurança de Senha:** As senhas devem ser armazenadas de forma criptografada (`senha_hash`), nunca em texto puro.
+3. **Unicidade de Acesso:** Cada cliente deve possuir login, e-mail e CPF únicos no sistema.
+4. **Respeito à Duração dos Serviços na Agenda:** Cada agendamento feito pelo cliente deve bloquear na agenda o tempo correspondente ao serviço escolhido (Corte: 1h, Limpeza de pele: 2h, Escova: 1h, Pintura e químico: 3h, Unha: 1h, Depilação: 2h).
+5. **Acesso Apenas para Contas Ativas:** Clientes com status diferente de `'Ativo'` ficam impossibilitados de realizar agendamentos.
 
 ---
 
 ## 8. Dúvidas ou decisões pendentes
 
 Registre aqui pontos que ainda precisam ser discutidos com o professor ou com outras equipes.
-
-- 
-- 
-- 
-
-Caso não existam dúvidas, escreva:
 
 > Nenhuma dúvida pendente nesta Sprint.
 
@@ -179,21 +173,20 @@ Caso não existam dúvidas, escreva:
 
 Antes de finalizar a atividade de hoje, verifique se a equipe completou:
 
-- [ ] identificação dos integrantes;
-- [ ] descrição do módulo;
-- [ ] definição da tabela principal;
-- [ ] pelo menos 5 atributos além da chave primária;
-- [ ] escolha e justificativa da chave primária;
-- [ ] identificação das principais restrições;
-- [ ] identificação dos relacionamentos com outros módulos;
-- [ ] definição de pelo menos 3 regras de negócio;
-- [ ] registro de dúvidas ou decisões pendentes;
-- [ ] revisão do arquivo antes do commit.
+- [x] identificação dos integrantes;
+- [x] descrição do módulo;
+- [x] definição da tabela principal;
+- [x] pelo menos 5 atributos além da chave primária;
+- [x] escolha e justificativa da chave primária;
+- [x] identificação das principais restrições;
+- [x] identificação dos relacionamentos com outros módulos;
+- [x] definição de pelo menos 3 regras de negócio;
+- [x] registro de dúvidas ou decisões pendentes;
+- [x] revisão do arquivo antes do commit.
 
 ---
 
 ## 10. Regras de versionamento e entrega no GitHub
-
 A equipe deverá utilizar o fluxo de trabalho com **branch, commit e Pull Request (PR)** durante toda a semana.
 
 A Sprint 1/5 é apenas a primeira etapa. Os arquivos `SPRINT2-5.md`, `SPRINT3-5.md`, `SPRINT4-5.md` e `SPRINT5-5.md` serão adicionados progressivamente à **mesma branch de trabalho da equipe**, e o Pull Request final será aberto na sexta-feira.
@@ -204,17 +197,17 @@ A equipe **não deverá desenvolver diretamente na branch `main`**.
 
 Crie uma branch específica para o trabalho da equipe durante a semana.
 
-Para o Team 01, utilize:
+Para o Team 03, utilize:
 
 ```text
-team-01-sprints-1-5
+team-03-sprints-1-5
 ```
 
 O fluxo esperado é:
 
 ```text
 main
-  └── team-01-sprints-1-5
+  └── team-03-sprints-1-5
         ├── SPRINT1-5.md
         ├── SPRINT2-5.md
         ├── SPRINT3-5.md
@@ -237,22 +230,22 @@ Para hoje, após concluir o arquivo `SPRINT1-5.md`, utilize uma mensagem clara e
 Mensagem sugerida:
 
 ```text
-Team 01 - conclui Sprint 1 de 5
+Team 03 - conclui Sprint 1 de 5
 ```
 
 Nas próximas etapas, utilize o mesmo padrão:
 
 ```text
-Team 01 - conclui Sprint 2 de 5
-Team 01 - conclui Sprint 3 de 5
-Team 01 - conclui Sprint 4 de 5
-Team 01 - conclui Sprint 5 de 5
+Team 03 - conclui Sprint 2 de 5
+Team 03 - conclui Sprint 3 de 5
+Team 03 - conclui Sprint 4 de 5
+Team 03 - conclui Sprint 5 de 5
 ```
 
 Antes do commit, confira se o arquivo está na pasta correta:
 
 ```text
-teams/Teams-UNEMAT/team-01/
+teams/Teams-UNEMAT/team-03/
 ```
 
 Fluxo esperado:
@@ -282,7 +275,7 @@ O PR deverá ser aberto somente na **Sprint 5/5, na sexta-feira**, depois que to
 Ao final da semana, a branch deverá conter:
 
 ```text
-teams/Teams-UNEMAT/team-01/
+teams/Teams-UNEMAT/team-03/
 ├── SPRINT1-5.md
 ├── SPRINT2-5.md
 ├── SPRINT3-5.md
@@ -295,7 +288,7 @@ O Pull Request deverá utilizar:
 **Branch de origem:**
 
 ```text
-team-01-sprints-1-5
+team-03-sprints-1-5
 ```
 
 **Branch de destino:**
@@ -307,7 +300,7 @@ main
 Título sugerido para o PR:
 
 ```text
-[N1][Team 01] Sprints 1-5 - Módulo de Alunos
+[N1][UNEMAT][Team 03] Sprints 1-5 - Autenticação e Gestão de Clientes
 ```
 
 Na descrição do Pull Request, a equipe deverá informar:
@@ -338,8 +331,6 @@ Por isso:
 - alterações indevidas poderão fazer a validação automática do PR falhar;
 - o PR somente será considerado entrega quando estiver aberto no repositório oficial da disciplina.
 
-> **Atenção:** o arquivo de workflow atualmente presente no repositório ainda utiliza o padrão antigo `teams/team-*.md`. A estrutura adotada nesta atividade é `teams/Teams-UNEMAT/team-01/SPRINT1-5.md`; portanto, o professor atualizará o workflow para reconhecer a nova organização das Sprints antes da entrega final.
-
 ---
 
 ## 11. Entrega da Sprint 1/5
@@ -353,29 +344,29 @@ SPRINT1-5.md
 e permanecer dentro da pasta da equipe:
 
 ```text
-teams/Teams-UNEMAT/team-01/SPRINT1-5.md
+teams/Teams-UNEMAT/team-03/SPRINT1-5.md
 ```
 
 Ao finalizar a atividade de hoje:
 
 1. revise todas as respostas;
 2. confirme que o arquivo está na pasta correta;
-3. confirme que está trabalhando na branch `team-01-sprints-1-5`;
+3. confirme que está trabalhando na branch `team-03-sprints-1-5`;
 4. faça o commit da Sprint 1/5;
 5. envie a atualização para a branch da equipe;
 6. **não abra ainda o PR final**.
 
 ### Checklist Git/GitHub de hoje
 
-- [ ] Estou trabalhando na branch `team-01-sprints-1-5`;
-- [ ] não alterei diretamente a `main`;
-- [ ] editei apenas os arquivos da minha equipe;
-- [ ] o arquivo se chama `SPRINT1-5.md`;
-- [ ] o arquivo está em `teams/Teams-UNEMAT/team-01/`;
-- [ ] revisei o conteúdo antes de salvar;
-- [ ] realizei o commit da Sprint 1/5;
-- [ ] enviei o commit para a branch da equipe;
-- [ ] não abri o PR final antes da Sprint 5/5.
+- [x] Estou trabalhando na branch `team-03-sprints-1-5`;
+- [x] não alterei diretamente a `main`;
+- [x] editei apenas os arquivos da minha equipe;
+- [x] o arquivo se chama `SPRINT1-5.md`;
+- [x] o arquivo está em `teams/Teams-UNEMAT/team-03/`;
+- [x] revisei o conteúdo antes de salvar;
+- [x] realizei o commit da Sprint 1/5;
+- [x] enviei o commit para a branch da equipe;
+- [x] não abri o PR final antes da Sprint 5/5.
 
 ---
 
