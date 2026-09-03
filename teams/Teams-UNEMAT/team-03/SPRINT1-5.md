@@ -301,7 +301,7 @@ N:N  → muitos para muitos
 
 ## 13. Regras de negócio
 
-Defina pelo menos 5 regras de negócio para o sistema. Oiiiii
+Defina pelo menos 5 regras de negócio para o sistema.
 
 ### Regras do seu banco
 
