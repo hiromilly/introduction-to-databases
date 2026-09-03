@@ -95,14 +95,14 @@ Liste as principais funcionalidades ou informações que deverão ser contemplad
 
 O banco deverá permitir:
 
-- Cadastrar e autenticar clientes com login e senha criptografada (`senha_hash`);
-- Armazenar dados de contato (telefone, e-mail e CPF) para comunicação e confirmação de horários;
-- Cadastrar e manter o catálogo de serviços com nome, descrição, valor e duração em horas;
-- Cadastrar os profissionais do salão e suas especialidades de atendimento;
-- Registrar agendamentos vinculando cliente, profissional, data, horário de início e horário estimado de término;
-- Permitir múltiplos serviços em um mesmo agendamento;
-- Controlar o status de cada agendamento (Agendado, Confirmado, Concluído, Cancelado);
-- Registrar o pagamento e histórico financeiro de cada atendimento concluído.
+1- Cadastrar e autenticar clientes com login e senha criptografada (`senha_hash`);
+2- Armazenar dados de contato (telefone, e-mail e CPF) para comunicação e confirmação de horários;
+3- Cadastrar e manter o catálogo de serviços com nome, descrição, valor e duração em horas;
+4- Cadastrar os profissionais do salão e suas especialidades de atendimento;
+5- Registrar agendamentos vinculando ao cliente, profissional, data, horário de início e horário estimado de término;
+6- Permitir múltiplos serviços em um mesmo agendamento;
+7- Controlar o status de cada agendamento (Agendado, Confirmado, Concluído, Cancelado);
+8- Registrar o pagamento e histórico financeiro de cada atendimento concluído.
 
 ---
 
@@ -224,14 +224,14 @@ Caso o projeto possua mais de quatro entidades, registre-as abaixo.
 
 Cada tabela deverá possuir uma forma de identificar unicamente seus registros.
 
-| Entidade/Tabela | Chave primária prevista | Justificativa |
-| :--- | :--- | :--- |
-| `cliente` | `id_cliente` | Identificador numérico inteiro com `AUTO_INCREMENT`, único e imutável para cada cliente. |
-| `servico` | `id_servico` | Código numérico sequencial que identifica cada serviço de forma estável no catálogo. |
-| `profissional` | `id_profissional` | Identificador numérico único para cada colaborador do salão de beleza. |
-| `agendamento` | `id_agendamento` | Código único para rastrear cada agendamento na agenda e no histórico. |
-| `item_agendamento` | `id_item` | Identificador único de cada serviço adicionado a um determinado agendamento. |
-| `pagamento` | `id_pagamento` | Código identificador exclusivo de cada transação de pagamento realizada. |
+| Entidade/Tabela    | Chave primária prevista | Justificativa                                                                            |
+| :----------------- | :---------------------- | :--------------------------------------------------------------------------------------- |
+| `cliente`          | `id_cliente`            | Identificador numérico inteiro com `AUTO_INCREMENT`, único e imutável para cada cliente. |
+| `servico`          | `id_servico`            | Código numérico sequencial que identifica cada serviço de forma estável no catálogo.     |
+| `profissional`     | `id_profissional`       | Identificador numérico único para cada colaborador do salão de beleza.                   |
+| `agendamento`      | `id_agendamento`        | Código único para rastrear cada agendamento na agenda e no histórico.                    |
+| `item_agendamento` | `id_item`               | Identificador único de cada serviço adicionado a um determinado agendamento.             |
+| `pagamento`        | `id_pagamento`          | Código identificador exclusivo de cada transação de pagamento realizada.                 |
 
 ---
 
@@ -445,7 +445,7 @@ Defina pelo menos 5 perguntas que futuramente deverão ser respondidas por consu
 
 ## Entrega da Sprint 1/5
 
-O arquivo desta etapa deverá ser salvo com o nome:
+O arquivo desta etapa deverá ser salvo com o nome: 
 
 ```text
 SPRINT1-5.md
