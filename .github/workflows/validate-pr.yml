@@ -12,65 +12,90 @@ on:
 
 jobs:
   validate-pr:
-    name: Validate Team Sprints
+    name: validate-pr
     runs-on: ubuntu-latest
 
     steps:
-      # ============================================================
-      # 1. CHECKOUT
-      # ============================================================
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # ============================================================
-      # 2. VALIDAR NOME DA BRANCH
-      #
-      # Mesmo padrão para UNEMAT e UFR:
-      #
-      # team-01-sprints-1-5
-      # team-02-sprints-1-5
-      # ...
-      # team-16-sprints-1-5
-      #
-      # A instituição será identificada automaticamente pelo caminho
-      # dos arquivos alterados.
-      # ============================================================
-      - name: Validate branch name
+      - name: Validate branch
         id: branch
         shell: bash
         run: |
           set -euo pipefail
 
           BRANCH="${{ github.head_ref }}"
-
           echo "Branch recebida: $BRANCH"
 
-          if [[ ! "$BRANCH" =~ ^team-(0[1-9]|1[0-6])-sprints-1-5$ ]]; then
+          if [[ ! "$BRANCH" =~ ^team-([0-9]{2})$ ]]; then
             echo "::error::Nome de branch inválido."
-            echo "::error::Use o padrão: team-XX-sprints-1-5"
-            echo "::error::Exemplo: team-01-sprints-1-5"
+            echo "::error::Use o padrão team-XX. Ex.: team-01, team-08, team-15."
             exit 1
           fi
 
           TEAM_NUMBER="${BASH_REMATCH[1]}"
-          TEAM_NAME="team-${TEAM_NUMBER}"
-
           echo "team_number=$TEAM_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "team_name=$TEAM_NAME" >> "$GITHUB_OUTPUT"
+          echo "team_name=team-$TEAM_NUMBER" >> "$GITHUB_OUTPUT"
 
-      # ============================================================
-      # 3. IDENTIFICAR ARQUIVOS MODIFICADOS
-      # ============================================================
-      - name: Get changed files
-        id: changed
+      - name: Validate Pull Request title
+        id: pr
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TITLE="${{ github.event.pull_request.title }}"
+          BRANCH_TEAM="${{ steps.branch.outputs.team_number }}"
+
+          echo "Título recebido: $TITLE"
+
+          if [[ ! "$TITLE" =~ ^\[N([123])\]\[(UNEMAT|UFR)\]\[Team[[:space:]]([0-9]{2})\][[:space:]]Sprints[[:space:]]1-5[[:space:]]-[[:space:]].+$ ]]; then
+            echo "::error::Título do Pull Request inválido."
+            echo "::error::Use: [N1][UNEMAT][Team XX] Sprints 1-5 - Nome do Banco"
+            echo "::error::Também são aceitos N2/N3 e UFR."
+            exit 1
+          fi
+
+          MODULE="${BASH_REMATCH[1]}"
+          INSTITUTION="${BASH_REMATCH[2]}"
+          TITLE_TEAM="${BASH_REMATCH[3]}"
+
+          if [[ "$TITLE_TEAM" != "$BRANCH_TEAM" ]]; then
+            echo "::error::O Team informado no título não corresponde à branch."
+            echo "::error::Branch: team-$BRANCH_TEAM | Título: Team $TITLE_TEAM"
+            exit 1
+          fi
+
+          echo "module_number=$MODULE" >> "$GITHUB_OUTPUT"
+          echo "institution=$INSTITUTION" >> "$GITHUB_OUTPUT"
+
+      - name: Define submission directory
+        id: context
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TEAM="${{ steps.branch.outputs.team_name }}"
+          INSTITUTION="${{ steps.pr.outputs.institution }}"
+          MODULE="${{ steps.pr.outputs.module_number }}"
+
+          TEAM_DIR="teams/Teams-${INSTITUTION}/${TEAM}"
+          MODULE_DIR="${TEAM_DIR}/Module-${MODULE}"
+
+          echo "team_dir=$TEAM_DIR" >> "$GITHUB_OUTPUT"
+          echo "module_dir=$MODULE_DIR" >> "$GITHUB_OUTPUT"
+          echo "Diretório esperado: $MODULE_DIR"
+
+      - name: Validate changed files
         shell: bash
         run: |
           set -euo pipefail
 
           BASE_SHA="${{ github.event.pull_request.base.sha }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          MODULE_DIR="${{ steps.context.outputs.module_dir }}"
 
           CHANGED_FILES=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")
 
@@ -78,65 +103,18 @@ jobs:
           echo "$CHANGED_FILES"
 
           if [[ -z "$CHANGED_FILES" ]]; then
-            echo "::error::Nenhum arquivo foi modificado neste Pull Request."
+            echo "::error::Nenhum arquivo foi modificado."
             exit 1
           fi
 
-          {
-            echo "files<<EOF"
-            echo "$CHANGED_FILES"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      # ============================================================
-      # 4. IDENTIFICAR INSTITUIÇÃO E VALIDAR CAMINHOS
-      #
-      # Estruturas aceitas:
-      #
-      # teams/Teams-UNEMAT/team-XX/SPRINT1-5.md
-      # ...
-      # teams/Teams-UNEMAT/team-XX/SPRINT5-5.md
-      #
-      # OU
-      #
-      # teams/Teams-UFR/team-XX/SPRINT1-5.md
-      # ...
-      # teams/Teams-UFR/team-XX/SPRINT5-5.md
-      #
-      # Um mesmo PR não pode:
-      # - alterar arquivos das duas instituições;
-      # - alterar arquivos de outra equipe;
-      # - alterar arquivos fora das Sprints permitidas.
-      # ============================================================
-      - name: Validate institution and changed file paths
-        id: context
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TEAM_NUMBER="${{ steps.branch.outputs.team_number }}"
-          CHANGED_FILES="${{ steps.changed.outputs.files }}"
-
-          DETECTED_INSTITUTION=""
           INVALID=0
 
           while IFS= read -r file; do
             [[ -z "$file" ]] && continue
 
-            echo "Validando arquivo: $file"
-
-            if [[ "$file" =~ ^teams/Teams-(UNEMAT|UFR)/team-${TEAM_NUMBER}/SPRINT[1-5]-5\.md$ ]]; then
-              CURRENT_INSTITUTION="${BASH_REMATCH[1]}"
-
-              if [[ -z "$DETECTED_INSTITUTION" ]]; then
-                DETECTED_INSTITUTION="$CURRENT_INSTITUTION"
-              elif [[ "$DETECTED_INSTITUTION" != "$CURRENT_INSTITUTION" ]]; then
-                echo "::error file=$file::Um único Pull Request não pode misturar arquivos da UNEMAT e da UFR."
-                INVALID=1
-              fi
-            else
-              echo "::error file=$file::Arquivo não permitido."
-              echo "::error::A equipe só pode alterar SPRINT1-5.md até SPRINT5-5.md dentro da própria pasta."
+            if [[ "$file" != "$MODULE_DIR/"* ]]; then
+              echo "::error file=$file::Arquivo fora do diretório permitido."
+              echo "::error::O aluno só pode alterar arquivos em: $MODULE_DIR/"
               INVALID=1
             fi
           done <<< "$CHANGED_FILES"
@@ -145,228 +123,110 @@ jobs:
             exit 1
           fi
 
-          if [[ -z "$DETECTED_INSTITUTION" ]]; then
-            echo "::error::Não foi possível identificar a instituição."
-            exit 1
-          fi
-
-          TEAM_DIR="teams/Teams-${DETECTED_INSTITUTION}/team-${TEAM_NUMBER}"
-
-          echo "institution=$DETECTED_INSTITUTION" >> "$GITHUB_OUTPUT"
-          echo "team_dir=$TEAM_DIR" >> "$GITHUB_OUTPUT"
-
-          echo "Instituição identificada: $DETECTED_INSTITUTION"
-          echo "Diretório autorizado: $TEAM_DIR"
-
-      # ============================================================
-      # 5. VALIDAR TÍTULO DO PR
-      #
-      # Recomendado:
-      # [N1][UNEMAT][Team 01] Sprints 1-5 - Módulo de Alunos
-      # [N1][UFR][Team 01] Sprints 1-5 - Módulo de Alunos
-      #
-      # Também aceita, para compatibilidade:
-      # [N1][Team 01] Sprints 1-5 - Módulo de Alunos
-      # ============================================================
-      - name: Validate Pull Request title
+      - name: Validate required files
         shell: bash
         run: |
           set -euo pipefail
 
-          TITLE="${{ github.event.pull_request.title }}"
-          TEAM_NUMBER="${{ steps.branch.outputs.team_number }}"
-          INSTITUTION="${{ steps.context.outputs.institution }}"
-
-          echo "Título recebido: $TITLE"
-
-          PATTERN_WITH_INSTITUTION="^\[N1\]\[${INSTITUTION}\]\[Team ${TEAM_NUMBER}\] Sprints 1-5 - .+"
-          PATTERN_LEGACY="^\[N1\]\[Team ${TEAM_NUMBER}\] Sprints 1-5 - .+"
-
-          if [[ ! "$TITLE" =~ $PATTERN_WITH_INSTITUTION ]] && [[ ! "$TITLE" =~ $PATTERN_LEGACY ]]; then
-            echo "::error::Título do Pull Request inválido."
-            echo "::error::Use preferencialmente:"
-            echo "::error::[N1][${INSTITUTION}][Team ${TEAM_NUMBER}] Sprints 1-5 - Nome do módulo"
-            exit 1
-          fi
-
-      # ============================================================
-      # 6. EXIGIR AS CINCO SPRINTS
-      # ============================================================
-      - name: Validate all five Sprint files
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TEAM_DIR="${{ steps.context.outputs.team_dir }}"
+          MODULE="${{ steps.pr.outputs.module_number }}"
+          DIR="${{ steps.context.outputs.module_dir }}"
           MISSING=0
 
-          for sprint in 1 2 3 4 5; do
-            FILE="${TEAM_DIR}/SPRINT${sprint}-5.md"
+          if [[ "$MODULE" == "1" ]]; then
+            REQUIRED=(
+              "SPRINT1-5.md"
+              "SPRINT2-5.md"
+              "SPRINT2-5.sql"
+              "SPRINT3-5.md"
+              "SPRINT3-5.sql"
+              "SPRINT4-5.md"
+              "SPRINT4-5.sql"
+              "SPRINT5-5.md"
+              "SPRINT5-5.sql"
+            )
+          else
+            REQUIRED=(
+              "SPRINT1-5.md"
+              "SPRINT1-5.sql"
+              "SPRINT2-5.md"
+              "SPRINT2-5.sql"
+              "SPRINT3-5.md"
+              "SPRINT3-5.sql"
+              "SPRINT4-5.md"
+              "SPRINT4-5.sql"
+              "SPRINT5-5.md"
+              "SPRINT5-5.sql"
+            )
+          fi
+
+          for filename in "${REQUIRED[@]}"; do
+            FILE="$DIR/$filename"
 
             if [[ ! -f "$FILE" ]]; then
-              echo "::error file=$FILE::Arquivo obrigatório ausente: SPRINT${sprint}-5.md"
+              echo "::error file=$FILE::Arquivo obrigatório ausente: $filename"
               MISSING=1
             else
-              echo "OK: $FILE"
+              echo "OK: $filename"
             fi
           done
 
           if [[ "$MISSING" -eq 1 ]]; then
-            echo "::error::A entrega final deve conter SPRINT1-5.md até SPRINT5-5.md."
+            echo "::error::A entrega do Module-$MODULE está incompleta."
             exit 1
           fi
 
-      # ============================================================
-      # 7. IMPEDIR ARQUIVOS VAZIOS
-      # ============================================================
-      - name: Validate Sprint files are not empty
+      - name: Validate non-empty files
         shell: bash
         run: |
           set -euo pipefail
 
-          TEAM_DIR="${{ steps.context.outputs.team_dir }}"
+          DIR="${{ steps.context.outputs.module_dir }}"
 
-          for sprint in 1 2 3 4 5; do
-            FILE="${TEAM_DIR}/SPRINT${sprint}-5.md"
+          for file in "$DIR"/*.md "$DIR"/*.sql; do
+            [[ -e "$file" ]] || continue
 
-            CONTENT_LINES=$(grep -Ev '^[[:space:]]*$|^[[:space:]]*---[[:space:]]*$' "$FILE" | wc -l)
-
-            if [[ "$CONTENT_LINES" -lt 5 ]]; then
-              echo "::error file=$FILE::O arquivo parece estar vazio ou incompleto."
+            if [[ ! -s "$file" ]]; then
+              echo "::error file=$file::O arquivo está vazio."
               exit 1
             fi
           done
 
-      # ============================================================
-      # 8. VALIDAR SPRINT 1/5 — PLANEJAMENTO
-      # ============================================================
-      - name: Validate SPRINT1-5 structure
+      - name: Validate basic SQL content
         shell: bash
         run: |
           set -euo pipefail
 
-          FILE="${{ steps.context.outputs.team_dir }}/SPRINT1-5.md"
+          DIR="${{ steps.context.outputs.module_dir }}"
 
-          require_text() {
-            local text="$1"
+          for file in "$DIR"/*.sql; do
+            [[ -e "$file" ]] || continue
 
-            if ! grep -Fq "$text" "$FILE"; then
-              echo "::error file=$FILE::Seção obrigatória ausente: $text"
-              exit 1
-            fi
-          }
-
-          require_text "## 1. Integrantes"
-          require_text "## 2. Descrição do módulo"
-          require_text "## 3. Planejamento da tabela principal"
-          require_text "## 4. Chave primária"
-          require_text "## 5. Restrições de integridade"
-          require_text "## 6. Relacionamentos com outros módulos"
-          require_text "## 7. Regras de negócio identificadas"
-          require_text "## 8. Dúvidas ou decisões pendentes"
-          require_text "## 9. Checklist da Sprint 1/5"
-
-      # ============================================================
-      # 9. VALIDAR SPRINT 2/5 — DDL
-      # ============================================================
-      - name: Validate SPRINT2-5 DDL
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          FILE="${{ steps.context.outputs.team_dir }}/SPRINT2-5.md"
-
-          if ! grep -Eqi 'CREATE[[:space:]]+TABLE' "$FILE"; then
-            echo "::error file=$FILE::A Sprint 2/5 deve conter CREATE TABLE."
-            exit 1
-          fi
-
-          if ! grep -Eqi 'PRIMARY[[:space:]]+KEY' "$FILE"; then
-            echo "::error file=$FILE::A Sprint 2/5 deve conter PRIMARY KEY."
-            exit 1
-          fi
-
-      # ============================================================
-      # 10. VALIDAR SPRINT 3/5 — DML
-      # ============================================================
-      - name: Validate SPRINT3-5 DML
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          FILE="${{ steps.context.outputs.team_dir }}/SPRINT3-5.md"
-
-          for keyword in INSERT UPDATE DELETE; do
-            if ! grep -Eqi "$keyword" "$FILE"; then
-              echo "::error file=$FILE::A Sprint 3/5 deve conter ${keyword}."
+            if ! grep -Eqi '\b(SELECT|CREATE|INSERT|UPDATE|DELETE|ALTER|DROP|CALL|START|COMMIT|ROLLBACK)\b' "$file"; then
+              echo "::error file=$file::O arquivo .sql não contém comandos SQL reconhecíveis."
               exit 1
             fi
           done
 
-      # ============================================================
-      # 11. VALIDAR SPRINT 4/5 — CONSULTAS SQL
-      # ============================================================
-      - name: Validate SPRINT4-5 queries
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          FILE="${{ steps.context.outputs.team_dir }}/SPRINT4-5.md"
-
-          for keyword in "SELECT" "WHERE" "ORDER BY" "GROUP BY"; do
-            if ! grep -Eqi "$keyword" "$FILE"; then
-              echo "::error file=$FILE::A Sprint 4/5 deve conter ${keyword}."
-              exit 1
-            fi
-          done
-
-          if ! grep -Eqi 'HAVING|COUNT|SUM|AVG|MIN|MAX' "$FILE"; then
-            echo "::error file=$FILE::A Sprint 4/5 deve apresentar HAVING e/ou função de agregação."
-            exit 1
-          fi
-
-      # ============================================================
-      # 12. VALIDAR SPRINT 5/5 — REVISÃO FINAL
-      # ============================================================
-      - name: Validate SPRINT5-5 final review
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          FILE="${{ steps.context.outputs.team_dir }}/SPRINT5-5.md"
-
-          if ! grep -Eqi 'checklist|valida|teste|revis' "$FILE"; then
-            echo "::error file=$FILE::A Sprint 5/5 deve registrar revisão, validação ou testes finais."
-            exit 1
-          fi
-
-      # ============================================================
-      # 13. VALIDAR QUANTIDADE DE COMMITS
-      # ============================================================
       - name: Validate commits
         shell: bash
         run: |
           set -euo pipefail
 
-          COMMIT_COUNT="${{ github.event.pull_request.commits }}"
+          COMMITS="${{ github.event.pull_request.commits }}"
+          echo "Quantidade de commits no PR: $COMMITS"
 
-          echo "Quantidade de commits no PR: $COMMIT_COUNT"
-
-          if [[ "$COMMIT_COUNT" -lt 5 ]]; then
-            echo "::error::A entrega deve possuir pelo menos 5 commits."
-            echo "::error::Realize pelo menos um commit por Sprint."
+          if [[ "$COMMITS" -lt 5 ]]; then
+            echo "::error::O Pull Request deve possuir pelo menos 5 commits."
+            echo "::error::Recomendação: pelo menos um commit por Sprint."
             exit 1
           fi
 
-      # ============================================================
-      # 14. RESULTADO FINAL
-      # ============================================================
       - name: Validation completed
         run: |
-          echo "============================================"
+          echo "=============================================="
           echo "PULL REQUEST VALIDADO COM SUCESSO"
-          echo "Instituição: ${{ steps.context.outputs.institution }}"
-          echo "Equipe:      ${{ steps.branch.outputs.team_name }}"
-          echo "Branch:      ${{ github.head_ref }}"
-          echo "Destino:     main"
-          echo "============================================"
+          echo "Module: Module-${{ steps.pr.outputs.module_number }}"
+          echo "Instituição: ${{ steps.pr.outputs.institution }}"
+          echo "Branch: ${{ steps.branch.outputs.team_name }}"
+          echo "Destino: main"
+          echo "=============================================="
